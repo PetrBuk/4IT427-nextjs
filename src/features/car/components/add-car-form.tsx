@@ -31,11 +31,12 @@ import { Brand, CarModel } from '@prisma/client'
 import { Path, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createCarSchema } from '../model/schema'
-import { useFormState } from 'react-dom'
+import { useFormState, useFormStatus } from 'react-dom'
 import { addCarFormHandler } from '@/actions/add-car-handler'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getFormData } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 
 type AddCarFormProps = {
   brands: Brand[]
@@ -63,6 +64,7 @@ export const AddCarForm = ({ brands, models }: AddCarFormProps) => {
   })
 
   const formRef = useRef<HTMLFormElement>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (state.result === 'error') {
@@ -94,8 +96,10 @@ export const AddCarForm = ({ brands, models }: AddCarFormProps) => {
             ref={formRef}
             onSubmit={(e) => {
               e.preventDefault()
-              form.handleSubmit(() => {
-                formAction(getFormData(form.getValues()))
+              form.handleSubmit(async () => {
+                setLoading(true)
+                await formAction(getFormData(form.getValues()))
+                setLoading(false)
               })(e)
             }}
             className="grid gap-8"
@@ -184,10 +188,24 @@ export const AddCarForm = ({ brands, models }: AddCarFormProps) => {
                 </FormItem>
               )}
             />
-            <Button type="submit">Submit</Button>
+            <SubmitButton loading={loading} />
           </form>
         </Form>
       </CardContent>
     </Card>
+  )
+}
+
+const SubmitButton = ({ loading }: { loading: boolean }) => {
+  return (
+    <Button type="submit" disabled={loading}>
+      {loading && (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing
+        </>
+      )}
+      {!loading && 'Submit'}
+    </Button>
   )
 }
